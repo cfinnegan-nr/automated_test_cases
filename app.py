@@ -4,6 +4,12 @@ from requests.auth import HTTPBasicAuth
 import json
 import logging
 
+# Import OpenAI Environment Variables
+from openaienvvars import (AZURE_OPENAI_BASE_PATH, AI_API_TOKEN, 
+                       AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME, 
+                       AZURE_OPENAI_API_INSTANCE_NAME, 
+                       AZURE_OPENAI_API_VERSION)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -13,8 +19,13 @@ JIRA_CREATE_ENDPOINT = "https://netreveal.atlassian.net/rest/api/2/issue"
 JIRA_USER_NAME = os.getenv('JIRA_USER_NAME', "not_found")
 JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN', "not_found")
 
-AI_ENDPOINT = "https://test-apim-eastus2.azure-api.net/openai-test/openai/deployments/gpt-4-32k/chat/completions?api-version=2024-02-15-preview"
-AI_API_TOKEN = os.getenv('AI_API_TOKEN', "not_found")
+#AI_ENDPOINT = "https://test-apim-eastus2.azure-api.net/openai-test/openai/deployments/gpt-4-32k/chat/completions?api-version=2024-02-15-preview"
+#AI_API_TOKEN = os.getenv('AI_API_TOKEN', "not_found")
+
+# Construct the correct URL
+AI_ENDPOINT = f"{AZURE_OPENAI_BASE_PATH}/{AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME}/chat/completions?api-version={AZURE_OPENAI_API_VERSION}"
+    
+
 MAX_TOKENS = 800
 TEMPERATURE = 0
 
