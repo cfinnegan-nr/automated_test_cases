@@ -1,0 +1,7 @@
+.venv/
+
+.envrc
+
+test_app.py
+tmp.json
+tmp.py

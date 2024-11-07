@@ -1,0 +1,58 @@
+{
+    "testCases": [
+        {
+            "testCaseId": "TC_FCENGX-2846_01",
+            "title": "Verify that only Group3 is paused when Group3 has incorrect SQL and throws exception",
+            "precondition": "There are 3 groups with dbQuery jobs. Group1 and Group2 have correct SQL and don't throw exception. Group3 has incorrect SQL and it throws exception.",
+            "steps": [
+                {
+                    "stepId": "1",
+                    "description": "Start the batch process with the given schedule configuration",
+                    "expectedResult": "Batch process starts successfully"
+                },
+                {
+                    "stepId": "2",
+                    "description": "Check the status of Group1, Group2, and Group3",
+                    "expectedResult": "Only Group3 is in 'pause' status. Group1 and Group2 are not in 'pause' status"
+                }
+            ],
+            "postcondition": "Batch process is stopped"
+        },
+        {
+            "testCaseId": "TC_FCENGX-2846_02",
+            "title": "Verify that changing the error handler in Group3 prevents Group1 and Group2 from pausing",
+            "precondition": "There are 3 groups with dbQuery jobs. Group1 and Group2 have correct SQL and don't throw exception. Group3 has incorrect SQL and throws exception. The error handler in Group3 is changed.",
+            "steps": [
+                {
+                    "stepId": "1",
+                    "description": "Start the batch process with the given schedule configuration",
+                    "expectedResult": "Batch process starts successfully"
+                },
+                {
+                    "stepId": "2",
+                    "description": "Check the status of Group1, Group2, and Group3",
+                    "expectedResult": "Neither Group1 nor Group2 are in 'pause' status"
+                }
+            ],
+            "postcondition": "Batch process is stopped"
+        },
+        {
+            "testCaseId": "TC_FCENGX-2846_03",
+            "title": "Verify that a wrong group is not paused when a DBScriptJob throws an exception",
+            "precondition": "A DBScriptJob 'CDDIND_SetCustomerProcessingIsRunningToTrue' in group 'CDDIND_InitializeIndividualScoring' throws an exception",
+            "steps": [
+                {
+                    "stepId": "1",
+                    "description": "Start the batch process with the given schedule configuration",
+                    "expectedResult": "Batch process starts successfully"
+                },
+                {
+                    "stepId": "2",
+                    "description": "Check the status of the group 'CDDIND_InitializeIndividualScoring' and 'WLMCurrencyCutOffTrigger'",
+                    "expectedResult": "Only the group 'CDDIND_InitializeIndividualScoring' is in 'pause' status. The group 'WLMCurrencyCutOffTrigger' is not in 'pause' status"
+                }
+            ],
+            "postcondition": "Batch process is stopped"
+        }
+    ]
+}

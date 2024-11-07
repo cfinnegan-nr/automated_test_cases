@@ -1,0 +1,95 @@
+{
+    "key": "FCENGX-2846",
+    "fields": {
+        "summary": "Batch Error Handler pause more groups than one",
+        "description": "First raised in 2023 but now blocking Batch Process feedback:\n\nh2. Description\n\nThere are 3 groups with dbQuery jobs. Group1 and Group2 have correct SQL and don\u2019t throw exception. Group3 has incorrect SQL and it throws exception.\n\n{noformat}<schedule name=\"Excample_FCENGX\">\n    <group name=\"DummyGroup1\">\n        <trigger name=\"DummyTrigger1\">\n            <type> IntervalTrigger </type>\n            <depends> !DummyTrigger1</depends>\n            <parameter name=\"interval\"> 10000 </parameter>\n            </trigger>\n        <job name=\"DummyJob1\" flow=\"AML BD ACQ\">\n            <type>DummyJob</type>\n            <depends>DummyTrigger1</depends>\n            <priority>2</priority>\n            <error-handler>BatchErrorHandler</error-handler>\n            <parameter name=\"counter\">COUNTER</parameter>\n            </job>\n        <job name=\"DummyJob12\" flow=\"AML BD ACQ\">\n            <type>DBQueryJob</type>\n            <depends>DummyTrigger1</depends>\n            <priority>3</priority>\n            <error-handler>BatchErrorHandler</error-handler>\n            <batch-logging>true</batch-logging>\n            <parameter name=\"sql\"> SELECT 1 from customers </parameter>\n            </job>\n    </group>\n    <group name=\"DummyGroup2\">\n        <trigger name=\"DummyTrigger2\">\n            <type> IntervalTrigger </type>\n            <depends> !DummyTrigger2</depends>\n            <parameter name=\"interval\"> 10000 </parameter>\n        </trigger>\n        <job name=\"DummyJob2\" flow=\"AML BD ACQ\">\n            <type>DummyJob</type>\n            <depends>DummyTrigger2</depends>\n            <priority>2</priority>\n            <error-handler>BatchErrorHandler</error-handler>\n            <parameter name=\"counter\">COUNTER</parameter>\n        </job>\n        <job name=\"DummyJob22\" flow=\"AML BD ACQ\">\n            <type>DBQueryJob</type>\n            <depends>DummyTrigger2</depends>\n            <priority>3</priority>\n            <error-handler>BatchErrorHandler</error-handler>\n            <batch-logging>true</batch-logging>\n            <parameter name=\"sql\"> SELECT 1 from alert_header </parameter>\n        </job>\n    </group>\n    <group name=\"DummyGroup3\">\n        <trigger name=\"DummyTrigger3\">\n            <type> IntervalTrigger </type>\n            <depends> !DummyTrigger3</depends>\n            <parameter name=\"interval\"> 10000 </parameter>\n        </trigger>\n        <job name=\"lkon1\" flow=\"AMLIET AAP Run Config Pipeline\">\n            <type>LogJob</type>\n            <depends>DummyTrigger3</depends>\n            <priority>1</priority>\n            <error-handler>BatchErrorHandler</error-handler>\n            <batch-logging>true</batch-logging>\n            <parameter name=\"level\">{level:-error}</parameter>\n            <parameter name=\"line(1).text\">DUMMY TRIGGER 3.</parameter>\n        </job>\n        <job name=\"DummyJob3\" flow=\"AML BD ACQ\">\n            <type>DBQueryJob</type>\n            <depends>DummyTrigger3</depends>\n            <priority>2</priority>\n            <error-handler>BatchErrorHandler</error-handler>\n            <batch-logging>true</batch-logging>\n            <parameter name=\"sql\"> SELECT 1 from abc </parameter>\n        </job>\n</group>\n</schedule>{noformat}\n\nExpected: only Group3 will be in \u201cpause\u201d status.\n\nActual: Group1 or Group3 are in \u201cpause\u201d status, not Group3\n\nh2. Environment\n\nNone\n\nh2. Steps to Reproduce\n\nNone\n\nh2. Root Cause Analysis\n\nNone\n\nh2. Notes\n\nNone\n\nh2. Environment (GEP)\n\nNone",
+        "comment": {
+            "comments": [
+                {
+                    "author": {
+                        "displayName": "Jennifer Lalor"
+                    },
+                    "body": "For full history please see: [https://netreveal.atlassian.net/browse/FCENG-26408|https://netreveal.atlassian.net/browse/FCENG-26408|smart-link] ",
+                    "updated": "2024-06-26T09:29:46.197+0100"
+                },
+                {
+                    "author": {
+                        "displayName": "Lukasz Konieczka"
+                    },
+                    "body": "this is bloker for [https://netreveal.atlassian.net/browse/APPSDEVX-1635|https://netreveal.atlassian.net/browse/APPSDEVX-1635|smart-link]  as some different groups are paused than expected.\n\nHi\u00a0\n\nWe are testing solution for\u00a0[+APPSDEVX-1635+|https://netreveal.atlassian.net/browse/APPSDEVX-1635]\n\nIn AML we base on group statuses to check if the process is not failing.\n\nNow we have situation like\u00a0[https://netreveal.atlassian.net/browse/FCENG-26408|https://netreveal.atlassian.net/browse/FCENG-26408|smart-link]\n\n\u00a0\n\nThe group AMLORCH_SMBDProcessingPoll \u00a0is paused, but the description about error is from different group (AMLIET_UpdateKeepFlagDetTxnLink is in EIMAGT_AlertGeneration group)\n\n\n\nthe easy way to reproduce it is this example with 3 groups. Only group 3 should be terminated. But for example group2 is paused as well\n\n{noformat}<schedule name=\"Sensa Processing Schedule\">\n<group name=\"DummyGroup1\">\n<trigger name=\"DummyTrigger1\">\n<type> IntervalTrigger </type>\n<depends> !DummyTrigger1</depends>\n<parameter name=\"interval\"> 10000 </parameter>\n</trigger>\n<job name=\"DummyJob1\" flow=\"AML BD ACQ\">\n<type>DummyJob</type>\n<depends>DummyTrigger1</depends>\n<priority>2</priority>\n<error-handler>BatchErrorHandler</error-handler>\n<parameter name=\"counter\">COUNTER</parameter>\n</job>\n<job name=\"DummyJob12\" flow=\"AML BD ACQ\">\n<type>DBQueryJob</type>\n<depends>DummyTrigger1</depends>\n<priority>3</priority>\n<error-handler>BatchErrorHandler</error-handler>\n<batch-logging>true</batch-logging>\n<parameter name=\"sql\"> SELECT 1 from customers </parameter>\n</job>\n</group>\n<group name=\"DummyGroup2\">\n<trigger name=\"DummyTrigger2\">\n<type> IntervalTrigger </type>\n<depends> !DummyTrigger2</depends>\n<parameter name=\"interval\"> 10000 </parameter>\n</trigger>\n<job name=\"DummyJob2\" flow=\"AML BD ACQ\">\n<type>DummyJob</type>\n<depends>DummyTrigger2</depends>\n<priority>2</priority>\n<error-handler>BatchErrorHandler</error-handler>\n<parameter name=\"counter\">COUNTER</parameter>\n</job>\n<job name=\"DummyJob22\" flow=\"AML BD ACQ\">\n<type>DBQueryJob</type>\n<depends>DummyTrigger2</depends>\n<priority>3</priority>\n<error-handler>BatchErrorHandler</error-handler>\n<batch-logging>true</batch-logging>\n<parameter name=\"sql\"> SELECT 1 from alert_header </parameter>\n</job>\n</group>\n<group name=\"DummyGroup3\">\n<trigger name=\"DummyTrigger3\">\n<type> IntervalTrigger </type>\n<depends> !DummyTrigger3</depends>\n<parameter name=\"interval\"> 10000 </parameter>\n</trigger>\n<job name=\"lkon1\" flow=\"AMLIET AAP Run Config Pipeline\">\n<type>LogJob</type>\n<depends>DummyTrigger3</depends>\n<priority>1</priority>\n<error-handler>BatchErrorHandler</error-handler>\n<batch-logging>true</batch-logging>\n\n<parameter name=\"level\">{level:-error}</parameter>\n<parameter name=\"line(1).text\">DUMMY TRIGGER 3.</parameter>\n</job>\n<job name=\"DummyJob3\" flow=\"AML BD ACQ\">\n<type>DBQueryJob</type>\n<depends>DummyTrigger3</depends>\n<priority>2</priority>\n<error-handler>BatchErrorHandler</error-handler>\n<batch-logging>true</batch-logging>\n<parameter name=\"sql\"> SELECT 1 from abc </parameter>\n</job>\n</group>\n</schedule>{noformat}",
+                    "updated": "2024-06-26T09:34:34.159+0100"
+                },
+                {
+                    "author": {
+                        "displayName": "Jennifer Lalor"
+                    },
+                    "body": "Feedback from Kieran:\n\nAm sending this by mail as I have no permissions to comment on either the FCENG-26408 or APPSDEV-12589 tickets\u2026\n\n\u00a0FCENG-26408 was investigated last year by Lukasz and myself.\n\n\u00a0After talking with Services colleagues, the issue has been encountered in the past and the solution the (different) Services team, at that time, used was to configure one-or-more custom error handlers, where the groupOperation parameter can be set to one of none/pause/abort.\n\n\u00a0This was included as one of my suggestions, last year, viz (see point 3):\n\n\u00a0[https://netreveal.atlassian.net/browse/FCENG-26408?focusedCommentId=3218929|https://gbr01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fnetreveal.atlassian.net%2Fbrowse%2FFCENG-26408%3FfocusedCommentId%3D3218929&data=05%7C02%7Cjennifer.lalor%40netreveal.ai%7Cbcbe78d3196443b5614508dc96c0b87d%7C4bfc8473b4f84a6883c66b4fc5438261%7C0%7C0%7C638551001669744392%7CUnknown%7CTWFpbGZsb3d8eyJWIjoiMC4wLjAwMDAiLCJQIjoiV2luMzIiLCJBTiI6Ik1haWwiLCJXVCI6Mn0%3D%7C0%7C%7C%7C&sdata=AUDgwJAv%2BqlYDpK0TbPOJ7g8od7bxhvgxFWsgIhEURg%3D&reserved=0]\n\n\u00a0Lukasz \u2013 can this suggested fix be tested? Given that it\u2019s worked for previous projects, it should also work here.",
+                    "updated": "2024-06-27T18:10:42.417+0100"
+                },
+                {
+                    "author": {
+                        "displayName": "Lukasz Konieczka"
+                    },
+                    "body": "when I\u2019ve changed error handler in Group3 from example  [https://netreveal.atlassian.net/browse/FCENGX-2846?focusedCommentId=3606131|https://netreveal.atlassian.net/browse/FCENGX-2846?focusedCommentId=3606131|smart-link]   i don\u2019t see paused neither group1 nor group2.\n\nIt seems workaround works. \n\nDo we want to change whole AGS configuration?",
+                    "updated": "2024-07-01T15:34:23.923+0100"
+                },
+                {
+                    "author": {
+                        "displayName": "Mariusz Ratajczyk"
+                    },
+                    "body": "I\u2019ve encountered a problem when a wrong group was paused.  \nIn this case this line from BatchErrorHandler.java:\n\n{noformat}this.batchProcess = this.controller.getBatchProcessDao().getBatchProcess(this.batchProcess.getId());{noformat}\n\nreturned id of a process belonging to the group _WLMCurrencyCutOffTrigger_\nwhereas _errorJob_ (_CDDIND_SetCustomerProcessingIsRunningToTrue_) passed to the method belonged to totally different group i.e. _CDDIND_InitializeIndividualScoring_.",
+                    "updated": "2024-07-08T15:31:09.028+0100"
+                },
+                {
+                    "author": {
+                        "displayName": "Michal Kolaczkowski"
+                    },
+                    "body": "Thanks [~accountid:712020:77b0f8d9-cab5-43cf-adf4-bfc200e6761e], am I assuming correctly, that _CDDIND_SetCustomerProcessingIsRunningToTrue_ is a DBScriptJob?\n\n[~accountid:712020:7c2e4a30-e8a9-435d-82f6-0975c7f78353], is there a capacity in CE to work on this one?",
+                    "updated": "2024-07-08T20:19:48.393+0100"
+                },
+                {
+                    "author": {
+                        "displayName": "Mariusz Ratajczyk"
+                    },
+                    "body": "Yes, _CDDIND_SetCustomerProcessingIsRunningToTrue_ is a DBScriptJob.",
+                    "updated": "2024-07-09T08:54:03.259+0100"
+                },
+                {
+                    "author": {
+                        "displayName": "Alan Duggan"
+                    },
+                    "body": "[~accountid:712020:d4e1c12f-4c7f-42fe-8c91-16d00090f648] , Wang will pick this up in the next couple of days.",
+                    "updated": "2024-07-09T10:22:08.243+0100"
+                },
+                {
+                    "author": {
+                        "displayName": "Wang Shuai"
+                    },
+                    "body": "Hi [~accountid:712020:d4e1c12f-4c7f-42fe-8c91-16d00090f648] , I haven\u2019t got chance today to check this issue.  can you attach latest schedule config xml for this issue? can you also attach debug logs with following classes set to debug\n\n{noformat}log4j.category.com.norkom.acquisition.business.scheduler.basic.BatchErrorHandler=DEBUG\nlog4j.category.com.norkom.acquisition.business.scheduler.BatchComponentController=DEBUG\nlog4j.category.com.norkom.acquisition.business.scheduler.Schedule=DEBUG{noformat}\n\n\n\nThanks.\n\nWang",
+                    "updated": "2024-07-09T18:25:43.492+0100"
+                },
+                {
+                    "author": {
+                        "displayName": "Michal Kolaczkowski"
+                    },
+                    "body": "[~accountid:712020:a4459b5e-329c-4830-be7d-7e23cf688f88] , would it make sense, to update a description with the simplest possible example (not the Sensa one) and maybe also leave only the relevant/latest attachments? \n\n[~accountid:712020:72493324-f957-4f15-89c0-7534d85a8a81], I believe that you can use config from this comment: [https://netreveal.atlassian.net/browse/FCENGX-2846?focusedCommentId=3606131|https://netreveal.atlassian.net/browse/FCENGX-2846?focusedCommentId=3606131|smart-link] \n\nAnd it\u2019s probably best to contact [~accountid:712020:a4459b5e-329c-4830-be7d-7e23cf688f88] directly if you\u2019re unable to reproduce the issue.",
+                    "updated": "2024-07-09T19:24:49.827+0100"
+                },
+                {
+                    "author": {
+                        "displayName": "Lukasz Konieczka"
+                    },
+                    "body": "[~accountid:712020:d4e1c12f-4c7f-42fe-8c91-16d00090f648]  I don\u2019t have permission to remove attachments \ud83d\ude1e \n\nDescription has been updated",
+                    "updated": "2024-07-10T13:04:16.520+0100"
+                },
+                {
+                    "author": {
+                        "displayName": "Wang Shuai"
+                    },
+                    "body": "Hi [~accountid:712020:a4459b5e-329c-4830-be7d-7e23cf688f88] , I just tried to reproduce the issue by running above example with three group (group 3 in pause status. group 1 and group 2 in succeeded status after few runs)\n\n!schedulegrouptesting.png|width=50%,alt=\"schedulegrouptesting.png\"!\n\n<error-handler name=\"BatchErrorHandler\">\n\t\t<type> BatchErrorHandler </type>\n\t\t<parameter name=\"groupOperation\"> pause </parameter>\n</error-handler>\n\ncan you check if *groupOperation* parameter is applied from your test for BatchErrorHandler  configured in scheduleconfig.xml?\n\n\n\nThanks,\n\nWang",
+                    "updated": "2024-07-11T15:30:13.223+0100"
+                }
+            ]
+        }
+    }
+}
