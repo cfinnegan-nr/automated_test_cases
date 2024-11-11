@@ -26,7 +26,8 @@ JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN', "not_found")
 AI_ENDPOINT = f"{AZURE_OPENAI_BASE_PATH}/{AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME}/chat/completions?api-version={AZURE_OPENAI_API_VERSION}"
     
 
-MAX_TOKENS = 800
+#MAX_TOKENS = 800
+MAX_TOKENS = 1500
 TEMPERATURE = 0
 
 # Define the whitelist
@@ -211,6 +212,25 @@ def get_test_cases_from_file(test_cases_file):
         return json.load(f)
 
 
+def clean_ai_response(response):
+    try:
+
+        # Strip out the "json" and "
+        if response.startswith("```json") and response.endswith("```"):
+            parsed_content = response[7:-3].strip()
+
+                                                         
+        # Optionally, load the content as JSON if needed:
+        # import json
+        # content = json.loads(content)
+
+        return parsed_content
+    except KeyError as e:
+        logging.error(f"Key error when cleaning AI response: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"Unexpected error when cleaning AI response: {e}")
+        return None                                                    
 
 
 
@@ -229,11 +249,35 @@ def main(jira_ticket):
     ticket_json_str = json.dumps(reduced_ticket)
     
     query_ai_response = query_ai(ticket_json_str)
+  
     
     logging.info("Stage 2 - AI Retrieval Complete")
     if "choices" in query_ai_response and query_ai_response["choices"]:
         ai_content = query_ai_response["choices"][0]["message"]["content"]
-        print(json.dumps(json.loads(ai_content), indent=4))
+        #print("\n 1st AI Content:")
+        #print(ai_content)
+        #print("\n 2nd AI Content:")
+        ai_content = clean_ai_response(ai_content)
+        #print(ai_content)
+        #
+        # Add some parsing code to check JSON format
+        try: 
+            parsed_ai_content = json.loads(ai_content) 
+            #print(json.dumps(parsed_ai_content, indent=4)) 
+
+        except json.JSONDecodeError as e:
+            print("JSONDecodeError:", e)
+            parsed_ai_content = None  # or handle the error appropriately, e.g., assign an empty dict or similar
+
+        if parsed_ai_content is not None:
+            print("\n Successful AI Content:\n")
+            #print(json.dumps(json.loads(parsed_ai_content), indent=4))
+            print(json.dumps(parsed_ai_content, indent=4)) 
+        else:
+            logging.error("Parsed AI content is not available due to JSON decoding failure.")
+            print("\n Failed AI Content:\n")
+            print(ai_content)
+        
     else:
         logging.error("No valid response from AI")
 
