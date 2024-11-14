@@ -14,12 +14,16 @@ from openaienvvars import (AZURE_OPENAI_BASE_PATH, AI_API_TOKEN,
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Load environment variables
+JIRA_BASE_URL = "https://netreveal.atlassian.net"
 JIRA_RETRIEVE_ENDPOINT = "https://netreveal.atlassian.net/rest/api/2/issue/{}?fields=description%2Ccomment%2Csummary"
 JIRA_CREATE_ENDPOINT = "https://netreveal.atlassian.net/rest/api/2/issue"
 JIRA_USER_NAME = os.getenv('JIRA_USER_NAME', "not_found")
 JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN', "not_found")
 
 ZEPHYR_BASE_URL = "https://api.zephyrscale.smartbear.com/v2"
+
+# Zephyr API token
+ZEPHYR_API_TOKEN = os.getenv('ZEPHYR_SQUAD_API_ACCESS_KEY', "not_found") # Replace with your Zephyr API token
 
 #AI_ENDPOINT = "https://test-apim-eastus2.azure-api.net/openai-test/openai/deployments/gpt-4-32k/chat/completions?api-version=2024-02-15-preview"
 #AI_API_TOKEN = os.getenv('AI_API_TOKEN', "not_found")
@@ -187,12 +191,26 @@ def createZephyrTicket(summary, description, project="CETASKS"):
 
 def add_test_steps(issue_id, steps):
     """Adds test steps to a test issue"""
-    url = f"{ZEPHYR_BASE_URL}/testcases/{issue_id}/teststeps"
+    #url = f"{ZEPHYR_BASE_URL}/testcases/{issue_id}/teststeps"
+
+    """Adds test steps to a test issue in Zephyr Squad"""
+    url = f"{JIRA_BASE_URL}/rest/zapi/latest/teststep/{issue_id}"
     
     headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
     }
+
+    # Updated headers for Zephyr API requests
+    zephyr_headers = {
+        "Authorization": f"Bearer {ZEPHYR_API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    # Print the URL and headers to ensure they are formatted correctly
+    print("\nAdding additional logging for Zephyr API requests:\n")
+    print(f"Zephyr Squad API URL: {url}")
+    print(f"Headers: {headers}")
 
     for step in steps:
         payload = {
@@ -200,10 +218,22 @@ def add_test_steps(issue_id, steps):
             "data": step['data'],
             "result": step['result']
         }
+        #response = requests.post(url, 
+        #                         headers=headers,
+        #                         auth=HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN), 
+        #                         data=json.dumps(payload))
+
+        # Print the payload for each step to see its structure
+        print(f"\nPayload for step '{step['step']}': {json.dumps(payload, indent=2)}")
+        
         response = requests.post(url, 
                                  headers=headers,
-                                 auth=HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN), 
+                                 auth=HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN),
                                  data=json.dumps(payload))
+        
+        # Print detailed response information for diagnosis
+        print(f"\nResponse Status Code: {response.status_code}")
+        print(f"\nResponse Text: {response.text}")
         
         if response.status_code == 201:
             print(f"Added step '{step['step']}' to test case.")
