@@ -1,0 +1,116 @@
+{
+    "testCases": [
+        {
+            "id": "TC-INVHUB-11696-01",
+            "title": "Verify filtering is enabled on all columns of the transaction list",
+            "preconditions": [
+                "User is logged into the application",
+                "User has access to the transaction list"
+            ],
+            "steps": [
+                "Navigate to the transaction list page.",
+                "Check each column header for a filter option.",
+                "Apply a filter to each column one by one."
+            ],
+            "expectedResults": [
+                "Each column header should have a filter option available.",
+                "Applying a filter should update the transaction list to show only the filtered results."
+            ],
+            "postconditions": [
+                "Transaction list displays filtered results based on the applied filter."
+            ]
+        },
+        {
+            "id": "TC-INVHUB-11696-02",
+            "title": "Verify sorting functionality works correctly with applied filters",
+            "preconditions": [
+                "User is logged into the application",
+                "User has access to the transaction list",
+                "A filter is applied to the transaction list"
+            ],
+            "steps": [
+                "Apply a filter to a column in the transaction list.",
+                "Sort the filtered list by another column."
+            ],
+            "expectedResults": [
+                "The transaction list should be sorted based on the selected column, considering only the filtered results."
+            ],
+            "postconditions": [
+                "Transaction list remains sorted and filtered as per user selection."
+            ]
+        },
+        {
+            "id": "TC-INVHUB-11696-03",
+            "title": "Verify help guide is updated with filtering instructions",
+            "preconditions": [
+                "User is logged into the application",
+                "User has access to the help guide"
+            ],
+            "steps": [
+                "Navigate to the help guide section.",
+                "Search for filtering instructions related to the transaction list."
+            ],
+            "expectedResults": [
+                "Help guide should contain updated instructions on how to use the filtering feature on the transaction list."
+            ],
+            "postconditions": [
+                "User understands how to apply filters on the transaction list using the help guide."
+            ]
+        },
+        {
+            "id": "TC-INVHUB-11696-04",
+            "title": "Verify transaction graph does not refresh based on chosen filters",
+            "preconditions": [
+                "User is logged into the application",
+                "User has access to the transaction list and graph"
+            ],
+            "steps": [
+                "Apply a filter to the transaction list.",
+                "Observe the transaction graph."
+            ],
+            "expectedResults": [
+                "The transaction graph should remain unchanged and not refresh based on the applied filters."
+            ],
+            "postconditions": [
+                "Transaction graph remains static regardless of list filters."
+            ]
+        },
+        {
+            "id": "TC-INVHUB-11696-05",
+            "title": "Verify Copilot does not recognize user-selected filters",
+            "preconditions": [
+                "User is logged into the application",
+                "User has access to the transaction list and Copilot"
+            ],
+            "steps": [
+                "Apply a filter to the transaction list.",
+                "Ask a question to Copilot that would typically require filter awareness."
+            ],
+            "expectedResults": [
+                "Copilot should provide a response without considering the user-selected filters."
+            ],
+            "postconditions": [
+                "Copilot operates independently of the transaction list filters."
+            ]
+        },
+        {
+            "id": "TC-INVHUB-11696-06",
+            "title": "Verify refreshing the graph and list resets selected filters",
+            "preconditions": [
+                "User is logged into the application",
+                "User has access to the transaction list and graph"
+            ],
+            "steps": [
+                "Apply a filter to the transaction list.",
+                "Trigger a refresh of the graph and list through Copilot or another method.",
+                "Observe the transaction list."
+            ],
+            "expectedResults": [
+                "The transaction list should reset to its original state, removing any applied filters."
+            ],
+            "postconditions": [
+                "Transaction list and graph are reset to default view after refresh."
+            ]
+        }
+    ]
+}
