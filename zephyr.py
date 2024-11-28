@@ -6,9 +6,15 @@ import base64
 import os
 from requests.auth import HTTPBasicAuth
 
+# Import OpenAI Environment Variables
+from openaienvvars import (AZURE_OPENAI_BASE_PATH, AI_API_TOKEN, 
+                       AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME, 
+                       AZURE_OPENAI_API_INSTANCE_NAME, 
+                       AZURE_OPENAI_API_VERSION)
+
 # Zephyr API credentials
-Z_ACCESS_KEY = os.getenv('ZEPHYR_SQUAD_API_ACCESS_KEY', "not_found")
 Z_SECRET_KEY = os.getenv('ZEPHYR_SQUAD_API_SECRET_KEY', "not_found")
+Z_ACCESS_KEY = os.getenv('ZEPHYR_SQUAD_API_ACCESS_KEY', "not_found")
 Z_ACCOUNT_ID = os.getenv('JIRA_ACCOUNT_ID', "not_found")
 Z_JWT = os.getenv('ZEPHYR_SQUAD_API_JWT', "not_found")
 
@@ -23,11 +29,11 @@ def validateEnvVars():
     """
     Validate that all required environment variables are set
     """
-    if Z_ACCESS_KEY == "not_found":
-        print("Zephyr Squad API Access Key not set")
-        return False
     if Z_SECRET_KEY == "not_found":
         print("Zephyr Squad API Secret Key not set")
+        return False
+    if Z_ACCESS_KEY == "not_found":
+        print("Zephyr Squad API Access Key not set")
         return False
     if Z_ACCOUNT_ID == "not_found":
         print("Zephyr Squad Account ID not set")

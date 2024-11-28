@@ -178,9 +178,9 @@ def createZephyrTicket(summary, description, project="CETASKS"):
     issue_key = ""
     
     if response.status_code == 201:
-        print("Issue created successfully.")
+        print("Zephytr Test created successfully.")
         issue_key = response.json()['key']
-        print(f"Issue key: {issue_key}")
+        print(f"Zephytr Test Case key: {issue_key}")
 
     else:
         print(f"Failed to create issue. Status code: {response.status_code}")
@@ -188,8 +188,35 @@ def createZephyrTicket(summary, description, project="CETASKS"):
 
     return issue_key
 
+def get_zephyr_test_case_id(issue_key):
+
+    print(f"\n\n\nGet the Internal Zephyr test case ID: {issue_key}\n\n")
+
+    """Retrieve the internal Zephyr Squad test case ID for the given Jira issue key."""
+    url = f"{JIRA_BASE_URL}/rest/zapi/latest/test/{issue_key}"
+    
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    
+    response = requests.get(url, 
+                            headers=headers,
+                            auth=HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN))
+    
+    if response.status_code == 200:
+        internal_id = response.json().get("id")
+        print(f"\nInternal Zephyr test case ID: {internal_id}")
+        return internal_id
+    else:
+        print(f"\nFailed to retrieve Zephyr test case ID: \n{response.text}\n")
+        return None
+
 
 def add_test_steps(issue_id, steps):
+
+    bStepsAdded = False
+
     """Adds test steps to a test issue"""
     #url = f"{ZEPHYR_BASE_URL}/testcases/{issue_id}/teststeps"
 
@@ -226,26 +253,35 @@ def add_test_steps(issue_id, steps):
         # Print the payload for each step to see its structure
         print(f"\nPayload for step '{step['step']}': {json.dumps(payload, indent=2)}")
         
-        response = requests.post(url, 
-                                 headers=headers,
-                                 auth=HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN),
-                                 data=json.dumps(payload))
-        
-        # Print detailed response information for diagnosis
-        print(f"\nResponse Status Code: {response.status_code}")
-        print(f"\nResponse Text: {response.text}")
-        
-        if response.status_code == 201:
-            print(f"Added step '{step['step']}' to test case.")
-        else:
-            print(f"Failed to add step: {response.text}")
+        try:
+            response = requests.post(url, 
+                                    headers=headers,
+                                    auth=HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN),
+                                    data=json.dumps(payload))
+                                
+            print(f"\nResponse Status Code: {response.status_code}")
+            
+            if response.status_code in (200,201):
+                print(f"\nAdded step '{step['step']}' to test case.\n")
+                bStepsAdded = True
+            else:
+                print(f"\nFailed to add step:\n {response.text}\n")
 
+        except Exception as error:
 
+            # Print detailed response information for diagnosis
+            print(f"\nAdd Steps Exception Error: {error}")
+            print(f"\nResponse Status Code: {response.status_code}")
+            print(f"\nResponse Text: {response.text}")
+            raise RuntimeError(f"\nFailed to add test steps to ticket {ticket_key}: {error}")
+
+    return bStepsAdded
+        
 
 
 def updateZephyrTicket(issue_key, test_cases_payload):
     """
-    Create a jira zephr ticket using Jira REST Endpoint
+    Create a jira zephyr ticket using Jira REST Endpoint
     """
     # Zephyr endpoint to add test cases to an issue
     #zephyr_url = f'https://netreveal.atlassian.net/jira/rest/zapi/latest/testcase/{issue_key}'
@@ -385,7 +421,7 @@ def main(jira_ticket):
 
             if parsed_ai_content is not None:
                 print("\n Successful AI Content:\n")
-                print(json.dumps(parsed_ai_content, indent=4)) 
+                #print(json.dumps(parsed_ai_content, indent=4)) 
                 
                 # Write the successful JSON output to a file
                 try:
@@ -398,7 +434,7 @@ def main(jira_ticket):
             else:
                 logging.error("Parsed AI content is not available due to JSON decoding failure.")
                 print("\n Failed AI Content:\n")
-                print(ai_content)
+                #print(ai_content)
             
         else:
             logging.error("No valid response from AI")
@@ -433,22 +469,28 @@ def main(jira_ticket):
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
-
-        #
-        # Stage 5: Update Zephyr ticket with the test cases steps
-        #
+        # Stage 5 - add test steps to the Zephyr ticket       
         try:
-            #updateZephyrTicket(zephyr_ticket_key, test_cases_payload)
             test_steps = [
-                {"step": "Step 1", "data": "Test Data 1", "result": "Expected Result 1"},
-                {"step": "Step 2", "data": "Test Data 2", "result": "Expected Result 2"},
-                {"step": "Step 3", "data": "Test Data 3", "result": "Expected Result 3"}
-    ]
+                {"step": "Step 1", "data": "Test Data 1", "result": "Expected Result 1"}
+                #,
+                #{"step": "Step 2", "data": "Test Data 2", "result": "Expected Result 2"},
+                #{"step": "Step 3", "data": "Test Data 3", "result": "Expected Result 3"}
+            ]
+            
+            # Step 1: Get the internal Zephyr Squad test case ID
+            internal_test_id = get_zephyr_test_case_id(zephyr_ticket_key)
+            
             if zephyr_ticket_key:
-                add_test_steps(zephyr_ticket_key, test_steps)
-                print(f"Test cases steps added to Zephyr ticket {zephyr_ticket_key} successfully.")
-                logging.info(f"Stage 5 - Test Cases Steps Added to Zephyr Ticket {zephyr_ticket_key} Successfully ")
-        
+                try:
+                    if add_test_steps(zephyr_ticket_key, test_steps):
+                        print(f"Test cases steps added to Zephyr ticket {zephyr_ticket_key} successfully.")
+                        logging.info(f"Stage 5 - Test Cases Steps Added to Zephyr Ticket {zephyr_ticket_key} Successfully ")
+                    else:
+                        print(f"Test cases steps NOT added to Zephyr ticket {zephyr_ticket_key} ")
+                except RuntimeError as ex:
+                    raise Exception(f"Failed to add test steps: {ex}")
+                
         except Exception as e:
             print(f"An error occurred while updating the Zephyr ticket: {e}")
             logging.error(f"An error occurred while updating the Zephyr ticket: {e}")
