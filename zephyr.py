@@ -22,7 +22,7 @@ JIRA_USER_NAME = os.getenv('JIRA_USER_NAME', "not_found")
 JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN', "not_found")
 
 ZAPI_BASE_URL = 'https://prod-api.zephyr4jiracloud.com/v2'
-# ZAPI_BASE_URL = 'https://prod-play.zephyr4jiracloud.com/connect'
+#ZAPI_BASE_URL = 'https://prod-play.zephyr4jiracloud.com/connect'
 
 
 def validateEnvVars():
@@ -105,14 +105,39 @@ def create_test_case():
     if response.status_code == 201:
         return response.json()
     else:
-        print(f"Failed to create test case: {response.status_code}")
+        print(f"\nFailed to create test case: {response.status_code}")
         print(response.text)
         return None
+
+def printserverinfo():
+   
+    #endpoint = '/rest/zapi/latest/test/CETASKS-4365'
+    #endpoint = '/environments?projectKey=CETASKS-4365&maxResults=10&startAt=0'
+    #endpoint = '/testcases?projectKey=CETASKS-4365&folderId=1&maxResults=10&startAt=0'
+    #endpoint = '/healthcheck'
+    endpoint = '/folders?maxResults=10&startAt=0&projectKey=CETASKS&folderType=TEST_CASE'
+    full_url = f'{ZAPI_BASE_URL}{endpoint}'
+#    jwt_token = generate_jwt('POST', endpoint)
+    
+    headers = generate_headers('POST', full_url)
+    
+
+    response = requests.post(full_url, headers=headers)
+
+    if response.status_code == 201:
+        return response.json()
+    else:
+        print(f"\nFailed to check Server Info: {response.status_code}")
+        print(response.text)
+        return None
+
 
 # Execute the function to create a test case
 if validateEnvVars() == False:
     print("Environment variables not set correctly. Exiting.")
     exit()
+
+printserverinfo()    
 
 created_test_case = create_test_case()
 

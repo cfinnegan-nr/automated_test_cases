@@ -120,8 +120,17 @@ def query_ai(my_prompt):
     """
     Send the filtered JIRA ticket information to the AI endpoint and retrieve the AI-generated test cases.
     """
-    system_prompt = ("You are a Zephr test case expert. Generate detailed QA test cases for each issue identified in the Jira ticket, "
-                     "and return all the test cases as a structured JSON object. Include the steps, expected results, and any preconditions or postconditions. ")
+    # system_prompt = ("You are a Zephyr test case expert. Generate detailed QA test cases for each issue identified in the Jira ticket, "
+    #                  "and return all the test cases as a structured JSON object. Include the steps, expected results, and any preconditions or postconditions. ")
+    
+    # Define the path to the prompt file
+    prompt_file_path = os.path.join(os.path.dirname(__file__), 'LLM_Prompt.txt')
+
+    # Read the contents of the file into a variable
+    with open(prompt_file_path, 'r', encoding='utf-8') as file:
+        system_prompt = file.read()
+
+    # Now system_prompt contains the contents of prompt.txt
     
     request_body = {
         "messages": [
