@@ -4,6 +4,7 @@ from requests.auth import HTTPBasicAuth
 import json
 import logging
 import re
+import sys
 
 # Import function to generate Excel file used as inout for Zephyr Squad Internal Import utilty
 from ZephyrImport import generate_excel_from_json
@@ -291,17 +292,24 @@ def main(jira_ticket):
 
 
 
+
+
+
 if __name__ == "__main__":
 
-    # Input the JIRA ticket number
-    #JIRA_TICKET = "FCENGX-2846"
-    JIRA_TICKET = "INVHUB-11696"
-    main(JIRA_TICKET)
+    # Input the JIRA ticket number as a command line parameter
+    
 
     # Create a new string variable for the test cases file name
     #test_cases_file_name = JIRA_TICKET + sFile_TC_suffix
 
     # Retrieve test cases from the file specified by the new variable
-    #test_cases_payload = get_test_cases_from_file(test_cases_file_name)
 
-
+    # Build an XL from these test cases to use in Zephyr Squad Internal Import utility
+   
+    if len(sys.argv) != 2:
+        print("Usage: python app.py <json_file>")
+    else:
+        #JIRA_TICKET = "INVHUB-11696"
+        JIRA_TICKET = sys.argv[1]
+        main(JIRA_TICKET)
