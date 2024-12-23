@@ -3,6 +3,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import json
 import logging
+import re
 
 # Import OpenAI Environment Variables
 from openaienvvars import (AZURE_OPENAI_BASE_PATH, AI_API_TOKEN, 
@@ -332,10 +333,23 @@ def get_test_cases_from_file(test_cases_file):
 
 def clean_ai_response(response):
     try:
+        print("Response - preparsing...\n.")
+        print(response)    
+        print("\n\n")
 
-        # Strip out the "json" and "
-        if response.startswith("```json") and response.endswith("```"):
-            parsed_content = response[7:-3].strip()
+
+        # # Strip out the leading and end characters returned in the LLM response
+        # if response.startswith("```json") and response.endswith("```"):
+        #     parsed_content = response[7:-3].strip()
+
+        # Strip out the leading and end characters returned in the LLM response
+        if response.startswith("```json"):
+            # Use regex to find everything after the opening ```json and before the second ```
+            match = re.search(r'^```json\s*(.*?)\s*```', response, re.DOTALL)
+            if match:
+                parsed_content = match.group(1).strip()    
+        else:
+            print("Failure in parsing LLM response to JSON...\n.")
 
                                                          
         # Optionally, load the content as JSON if needed:
