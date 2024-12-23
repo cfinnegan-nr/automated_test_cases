@@ -79,7 +79,7 @@ def generate_excel_from_json(json_file):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python generate_excel.py <json_file>")
+        print("Usage: python ZephyrImport.py <json_file>")
     else:
         json_filename = sys.argv[1]
         generate_excel_from_json(json_filename)
