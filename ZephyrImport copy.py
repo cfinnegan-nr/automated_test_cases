@@ -3,7 +3,6 @@ import json
 import sys
 import os
 from openpyxl import Workbook
-import logging
 
 def generate_excel_from_json(json_file):
     try:
@@ -69,7 +68,7 @@ def generate_excel_from_json(json_file):
         # Save the workbook
         output_file = "Zephyr_Test_Cases_Output.xlsx"
         wb.save(output_file)
-        logging.info(f"Stage 5 - Excel file '{output_file}' created successfully.")
+        print(f"Excel file '{output_file}' created successfully.")
 
     except FileNotFoundError:
         print(f"The file '{json_file}' does not exist.")
@@ -78,3 +77,9 @@ def generate_excel_from_json(json_file):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python ZephyrImport.py <json_file>")
+    else:
+        json_filename = sys.argv[1]
+        generate_excel_from_json(json_filename)

@@ -1,0 +1,81 @@
+{
+    "testCases": [
+        {
+            "id": "TC-INVHUB-11696-01",
+            "summary": "Verify filtering is enabled on all columns of the transaction list",
+            "preconditions": "User is logged into the system and has access to the transaction list.",
+            "steps": [
+                {
+                    "step": "Navigate to the transaction list page.",
+                    "expectedResult": "Transaction list page is displayed with all columns visible."
+                },
+                {
+                    "step": "Attempt to apply a filter on each column one by one.",
+                    "expectedResult": "Filter options are available and can be applied to each column."
+                }
+            ],
+            "postconditions": "Filters are applied to the transaction list."
+        },
+        {
+            "id": "TC-INVHUB-11696-02",
+            "summary": "Verify sorting functionality works correctly with applied filters",
+            "preconditions": "User has applied filters on the transaction list.",
+            "steps": [
+                {
+                    "step": "Apply a filter to a column in the transaction list.",
+                    "expectedResult": "The transaction list is filtered based on the selected criteria."
+                },
+                {
+                    "step": "Sort the filtered transaction list by a different column.",
+                    "expectedResult": "The transaction list is sorted based on the selected column, considering only the filtered results."
+                }
+            ],
+            "postconditions": "The transaction list remains sorted and filtered as expected."
+        },
+        {
+            "id": "TC-INVHUB-11696-03",
+            "summary": "Verify that the help guide is updated with filtering instructions",
+            "preconditions": "User is on the transaction list page.",
+            "steps": [
+                {
+                    "step": "Access the help guide from the transaction list page.",
+                    "expectedResult": "Help guide is accessible and opens correctly."
+                },
+                {
+                    "step": "Search for filtering instructions within the help guide.",
+                    "expectedResult": "Help guide contains updated instructions on how to apply filters to the transaction list."
+                }
+            ],
+            "postconditions": "User understands how to apply filters using the help guide."
+        },
+        {
+            "id": "TC-INVHUB-11696-04",
+            "summary": "Verify that the transaction graph does not refresh based on chosen filters",
+            "preconditions": "User has applied filters on the transaction list.",
+            "steps": [
+                {
+                    "step": "Observe the transaction graph before applying any filters.",
+                    "expectedResult": "Transaction graph is displayed with data from the entire transaction list."
+                },
+                {
+                    "step": "Apply a filter to the transaction list.",
+                    "expectedResult": "The transaction list is filtered, but the transaction graph remains unchanged."
+                }
+            ],
+            "postconditions": "Transaction graph remains unaffected by list filters."
+        },
+        {
+            "id": "TC-INVHUB-11696-05",
+            "summary": "Verify that Copilot is unaware of filters applied by the user",
+            "preconditions": "User has applied filters on the transaction list.",
+            "steps": [
+                {
+                    "step": "Ask a question to Copilot that would typically require knowledge of the transaction list filters.",
+                    "expectedResult": "Copilot provides a response that does not consider the applied filters."
+                }
+            ],
+            "postconditions": "Copilot's response is independent of the transaction list filters."
+        }
+    ],
+    "assumptions": "Test data should include a variety of transactions with different attributes to ensure comprehensive testing of filtering and sorting functionalities."
+}

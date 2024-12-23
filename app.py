@@ -5,6 +5,9 @@ import json
 import logging
 import re
 
+# Import function to generate Excel file used as inout for Zephyr Squad Internal Import utilty
+from ZephyrImport import generate_excel_from_json
+
 # Import OpenAI Environment Variables
 from openaienvvars import (AZURE_OPENAI_BASE_PATH, AI_API_TOKEN, 
                        AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME, 
@@ -21,13 +24,7 @@ JIRA_CREATE_ENDPOINT = "https://netreveal.atlassian.net/rest/api/2/issue"
 JIRA_USER_NAME = os.getenv('JIRA_USER_NAME', "not_found")
 JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN', "not_found")
 
-ZEPHYR_BASE_URL = "https://api.zephyrscale.smartbear.com/v2"
 
-# Zephyr API token
-ZEPHYR_API_TOKEN = os.getenv('ZEPHYR_SQUAD_API_ACCESS_KEY', "not_found") # Replace with your Zephyr API token
-
-#AI_ENDPOINT = "https://test-apim-eastus2.azure-api.net/openai-test/openai/deployments/gpt-4-32k/chat/completions?api-version=2024-02-15-preview"
-#AI_API_TOKEN = os.getenv('AI_API_TOKEN', "not_found")
 
 # Construct the correct URL
 AI_ENDPOINT = f"{AZURE_OPENAI_BASE_PATH}/{AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME}/chat/completions?api-version={AZURE_OPENAI_API_VERSION}"
@@ -155,192 +152,13 @@ def query_ai(my_prompt):
         logging.error(f"Error querying AI: {e}")
         return {}
     
-#def createZephrTicket(summary, description, test_cases_payload, project="CETASKS"):
-def createZephyrTicket(summary, description, project="CETASKS"):    
-    """
-    Create a jira zephyr ticket using Jira REST Endpoint
-    """
-    # Headers for the request
-    headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-    }
-    
-    payload = {
-        "fields": {
-            "project": {
-                "key": project
-            },
-            "summary": summary,
-            "description": description,
-            "issuetype": {
-                "name": "Test"
-            }
-        }
-    }
-
-    response = requests.post(JIRA_CREATE_ENDPOINT, 
-                             data=json.dumps(payload), 
-                             headers=headers, 
-                             auth=HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN))
-
-    # Print the response
-    issue_key = ""
-    
-    if response.status_code == 201:
-        print("Zephytr Test created successfully.")
-        issue_key = response.json()['key']
-        print(f"Zephytr Test Case key: {issue_key}")
-
-    else:
-        print(f"Failed to create issue. Status code: {response.status_code}")
-        print(response.json())
-
-    return issue_key
-
-def get_zephyr_test_case_id(issue_key):
-
-    print(f"\n\n\nGet the Internal Zephyr test case ID: {issue_key}\n\n")
-
-    """Retrieve the internal Zephyr Squad test case ID for the given Jira issue key."""
-    url = f"{JIRA_BASE_URL}/rest/zapi/latest/test/{issue_key}"
-    
-    headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-    }
-    
-    response = requests.get(url, 
-                            headers=headers,
-                            auth=HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN))
-    
-    if response.status_code == 200:
-        internal_id = response.json().get("id")
-        print(f"\nInternal Zephyr test case ID: {internal_id}")
-        return internal_id
-    else:
-        print(f"\nFailed to retrieve Zephyr test case ID: \n{response.text}\n")
-        return None
-
-
-def add_test_steps(issue_id, steps):
-
-    bStepsAdded = False
-
-    """Adds test steps to a test issue"""
-    #url = f"{ZEPHYR_BASE_URL}/testcases/{issue_id}/teststeps"
-
-    """Adds test steps to a test issue in Zephyr Squad"""
-    url = f"{JIRA_BASE_URL}/rest/zapi/latest/teststep/{issue_id}"
-    
-    headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-    }
-
-    # Updated headers for Zephyr API requests
-    zephyr_headers = {
-        "Authorization": f"Bearer {ZEPHYR_API_TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    # Print the URL and headers to ensure they are formatted correctly
-    print("\nAdding additional logging for Zephyr API requests:\n")
-    print(f"Zephyr Squad API URL: {url}")
-    print(f"Headers: {headers}")
-
-    for step in steps:
-        payload = {
-            "step": step['step'],
-            "data": step['data'],
-            "result": step['result']
-        }
-        #response = requests.post(url, 
-        #                         headers=headers,
-        #                         auth=HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN), 
-        #                         data=json.dumps(payload))
-
-        # Print the payload for each step to see its structure
-        print(f"\nPayload for step '{step['step']}': {json.dumps(payload, indent=2)}")
-        
-        try:
-            response = requests.post(url, 
-                                    headers=headers,
-                                    auth=HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN),
-                                    data=json.dumps(payload))
-                                
-            print(f"\nResponse Status Code: {response.status_code}")
-            
-            if response.status_code in (200,201):
-                print(f"\nAdded step '{step['step']}' to test case.\n")
-                bStepsAdded = True
-            else:
-                print(f"\nFailed to add step:\n {response.text}\n")
-
-        except Exception as error:
-
-            # Print detailed response information for diagnosis
-            print(f"\nAdd Steps Exception Error: {error}")
-            print(f"\nResponse Status Code: {response.status_code}")
-            print(f"\nResponse Text: {response.text}")
-            raise RuntimeError(f"\nFailed to add test steps to ticket {ticket_key}: {error}")
-
-    return bStepsAdded
-        
-
-
-def updateZephyrTicket(issue_key, test_cases_payload):
-    """
-    Create a jira zephyr ticket using Jira REST Endpoint
-    """
-    # Zephyr endpoint to add test cases to an issue
-    #zephyr_url = f'https://netreveal.atlassian.net/jira/rest/zapi/latest/testcase/{issue_key}'
-
-    print("zephyr_url is {}".format(zephyr_url))
-    headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-    }
-    
-    # Make the POST request to add test cases
-    response = requests.post(zephyr_url, 
-                             data=json.dumps(test_cases_payload), 
-                             headers=headers, 
-                             auth=HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN))
-
-    # Print the response
-    if response.status_code == 200:
-        print("Test cases added successfully.")
-    else:
-        print(f"Failed to add test cases. Status code: {response.status_code}")
-        # Handle non-JSON response
-        try:
-            response_json = response.json()
-            print(response_json)
-        except requests.exceptions.JSONDecodeError:
-            print("Response is not in JSON format.")
-            print(response.text)
-
-
-
-def get_test_cases_from_file(test_cases_file):
-    """
-    Read the json file <test_cases_file>.json and return the contents as a string
-    """
-    with open(f"{test_cases_file}.json") as f:
-        return json.load(f)
-
 
 def clean_ai_response(response):
     try:
-        print("Response - preparsing...\n.")
-        print(response)    
-        print("\n\n")
+        # print("Response - preparsing...\n.")
+        # print(response)    
+        # print("\n\n")
 
-
-        # # Strip out the leading and end characters returned in the LLM response
-        # if response.startswith("```json") and response.endswith("```"):
-        #     parsed_content = response[7:-3].strip()
 
         # Strip out the leading and end characters returned in the LLM response
         if response.startswith("```json"):
@@ -351,10 +169,7 @@ def clean_ai_response(response):
         else:
             print("Failure in parsing LLM response to JSON...\n.")
 
-                                                         
-        # Optionally, load the content as JSON if needed:
-        # import json
-        # content = json.loads(content)
+
 
         return parsed_content
     except KeyError as e:
@@ -375,13 +190,16 @@ def main(jira_ticket):
         print("Environment variables not set correctly. Exiting.")
         exit()
 
-    # Do not proceed to the LLM if there are any errors 
+    # Do not proceed to the LLM if there are any errors in JIRA Ticket Data Extraction
     bProceedtoLLM = True
 
-    # Define the AI response content
+    """
+    Set up procedural stages to extract JIRA data, query AI, and parse the AI response
+    """
     try:
         # Stage 1: Retrieve and filter the JIRA ticket
         try:
+            logging.info("Stage 1 - Extract Ticket Data from JIRA")
             ticket_data = retrieve_jira_ticket_from_server(jira_ticket)
         except Exception as e:
             logging.error(f"\nError retrieving JIRA ticket: {e}")
@@ -399,10 +217,11 @@ def main(jira_ticket):
         if reduced_ticket is None:
             raise ValueError("Failed to filter JIRA ticket data.")
         
-        logging.info("Stage 1 - Jira Retrieval")
 
-        # Stage 2: Convert to JSON and query AI
+
+        # Stage 2: Convert to JIRA Ticket data to JSON format
         try:
+            logging.info("Stage 2 - Build JSON Object with JIRA Ticket Details")
             ticket_json_str = json.dumps(reduced_ticket)
         except Exception as e:
             logging.error(f"Error converting ticket data to JSON string: {e}")
@@ -411,13 +230,15 @@ def main(jira_ticket):
         if ticket_json_str is None:
             raise ValueError("Failed to convert ticket data to JSON string.")
 
+        
+         # Stage 3: Convert to JSON and query AI
         try:
+            logging.info("Stage 3 - Requesting LLM to generate test cases using JIRA input...")
             query_ai_response = query_ai(ticket_json_str)
         except Exception as e:
             logging.error(f"Error querying AI: {e}")
             query_ai_response = {}
-        
-        # Continue with further processing of the `query_ai_response` if needed
+
 
     except ValueError as ve:
         logging.error(f"Processing halted: {ve}")
@@ -427,11 +248,10 @@ def main(jira_ticket):
         logging.error(f"Unexpected error: {e}")
 
     
-    #
-    # # Stage 3: Parse the LLM response to build a JSON file of test case steps
-    #
+    
+    # Stage 4: Parse the LLM response to build a JSON file of test case steps
     if bProceedtoLLM == True:
-        logging.info("Stage 2 - AI Retrieval")
+        logging.info("Stage 4 - Parsing LLM Response into JSON Format..")
         if "choices" in query_ai_response and query_ai_response["choices"]:
             ai_content = query_ai_response["choices"][0]["message"]["content"]
             ai_content = clean_ai_response(ai_content)
@@ -443,80 +263,31 @@ def main(jira_ticket):
                 parsed_ai_content = None  # or handle the error appropriately, e.g., assign an empty dict or similar
 
             if parsed_ai_content is not None:
-                print("\n Successful AI Content:\n")
-                #print(json.dumps(parsed_ai_content, indent=4)) 
-                
+                                               
                 # Write the successful JSON output to a file
                 try:
                     file_name = f"{jira_ticket}{sFile_TC_suffix}.json"
                     with open(file_name, 'w') as json_file:
                         json.dump(parsed_ai_content, json_file, indent=4)
-                    logging.info(f"JSON output successfully written to {file_name}")
+                    logging.info(f"Stage 4 - JSON output successfully written to {file_name}")
                 except IOError as e:
                     logging.error(f"Failed to write JSON output to file: {e}")
             else:
                 logging.error("Parsed AI content is not available due to JSON decoding failure.")
                 print("\n Failed AI Content:\n")
-                #print(ai_content)
+
             
         else:
             logging.error("No valid response from AI")
 
-
-        #
-        # Stage 4: Create a new 'Shell' Zephyr ticket 
-        #
-        logging.info("Stage 3 - Create Test Case Steps in JSON Format")
-        # Create a new string variable for the test cases file name
-        test_cases_file_name = JIRA_TICKET + sFile_TC_suffix
-
+        # Stage 5: Parse the JSON file of test case steps into XL format for Zephyr Squad Import    
+        logging.info("Stage 5 - Building Excel File for Zephyr Squad Import..")
         try:
-            # Retrieve test cases from the file specified by the new variable
-            test_cases_payload = get_test_cases_from_file(test_cases_file_name)
-            
-            if not isinstance(test_cases_payload, dict) or not test_cases_payload:
-                raise ValueError("Test cases payload is either not a dictionary or is empty")
-
-            # Create a new JIRA Zephyr ticket and get its key
-            zephyr_ticket_key = createZephyrTicket("AI Test Summary A", "AI Test Description A", "CETASKS") 
-            
-            if not isinstance(zephyr_ticket_key, str) or not zephyr_ticket_key.strip():
-                raise ValueError("Zephyr ticket key is either not a string or is empty")
-            
-            # If everything is successful
-            #print(f"Test cases retrieved and ticket created successfully. Ticket Key: {zephyr_ticket_key}")
-            logging.info(f"Stage 4 - Test Cases Retrieved / Zephyr 'Shell' Ticket {zephyr_ticket_key} Created Successfully ")
-
-        except ValueError as ve:
-            print(f"Validation error: {ve}")
+            generate_excel_from_json(f"{jira_ticket}{sFile_TC_suffix}.json")
+            logging.info("\n Successfully Generated AI Content and Created XL for Zephyr Squad Import\n")
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-
-        # Stage 5 - add test steps to the Zephyr ticket       
-        try:
-            test_steps = [
-                {"step": "Step 1", "data": "Test Data 1", "result": "Expected Result 1"}
-                #,
-                #{"step": "Step 2", "data": "Test Data 2", "result": "Expected Result 2"},
-                #{"step": "Step 3", "data": "Test Data 3", "result": "Expected Result 3"}
-            ]
-            
-            # Step 1: Get the internal Zephyr Squad test case ID
-            internal_test_id = get_zephyr_test_case_id(zephyr_ticket_key)
-            
-            if zephyr_ticket_key:
-                try:
-                    if add_test_steps(zephyr_ticket_key, test_steps):
-                        print(f"Test cases steps added to Zephyr ticket {zephyr_ticket_key} successfully.")
-                        logging.info(f"Stage 5 - Test Cases Steps Added to Zephyr Ticket {zephyr_ticket_key} Successfully ")
-                    else:
-                        print(f"Test cases steps NOT added to Zephyr ticket {zephyr_ticket_key} ")
-                except RuntimeError as ex:
-                    raise Exception(f"Failed to add test steps: {ex}")
-                
-        except Exception as e:
-            print(f"An error occurred while updating the Zephyr ticket: {e}")
-            logging.error(f"An error occurred while updating the Zephyr ticket: {e}")
+            logging.error(f"Error generating Excel file: {e}")
+            print(f"Error generating Excel file: {e}")
 
 
 
@@ -533,8 +304,4 @@ if __name__ == "__main__":
     # Retrieve test cases from the file specified by the new variable
     #test_cases_payload = get_test_cases_from_file(test_cases_file_name)
 
-    # Create a new JIRA Zephyr ticket and get its key
-   # zephyr_ticket_key = createZephrTicket("AI Test Summary A", "AI Test Description A", "CETASKS")
-#    zephyr_ticket_key = "CETASKS-4205"
 
-#   updateZephrTicket("CETASKS-4205", test_cases_payload)
