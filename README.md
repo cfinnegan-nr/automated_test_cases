@@ -19,26 +19,28 @@ A whitelist is specified to filter the data fetched from the Jira API. This whit
 
  - `jiraextraction.py` contains the functions to extract requirement data directly from JIRA through an API call;
 
-A series of functions is included in this script:
-- `filter_dict(d, whitelist)` - filters the response from Jira call based on the whitelist.
-- `extract_key(json_response)` - extracts the Jira ticket key from the Jira API response.
-- `retrieve_jira_ticket_from_file(file_name)` - if Jira data is located in a file, this function reads it.
-- `retrieve_jira_ticket_from_server(jira_ticket)` - provides the server call to Jira API to fetch the ticket data.
+        
+    - `filter_dict(d, whitelist)` - filters the response from Jira call based on the whitelist.
+    - `extract_key(json_response)` - extracts the Jira ticket key from the Jira API response.
+    - `retrieve_jira_ticket_from_file(file_name)` - if Jira data is located in a file, this function reads it.
+    - `retrieve_jira_ticket_from_server(jira_ticket)` - provides the server call to Jira API to fetch the ticket data.
 
 
  - `queryLLM.py` contains the functions to query the AI model;
 
     - `queryAI(my_prompt)` - sends the reduced Jira ticket information to the AI model and retrieves the response.
 
-    The prompt sent to the LLM is defined external to the code in the text file named `LLM_Prompt.txt`. The prompt can therefore be amended outside of the Python project coce.
+        The prompt sent to the LLM is defined external to the code in the text file named `LLM_Prompt.txt`. The prompt can therefore be amended outside of the Python project coce.
 
-    The filtered JIRA data is converted to a JSON string and sent to the AI model to generate the QA test cases. The test case generation process can be deterministic because the temperature parameter is set to 0. These results are created for the user in a readable, indented JSON file format.
+        The filtered JIRA data is converted to a JSON string and sent to the AI model to generate the QA test cases. The test case generation process can be deterministic because the temperature parameter is set to 0. These results are created for the user in a readable, indented JSON file format.
 
 
 
  - `Zephyrimport.py` contains the functions to build the EXCEL file for use with Zephyr Squad imports;
 
     - `generate_excel_from_json(json_file, epic_link)` - breaks down the JSON file with the test case, as created by the LLM, and formats into the appropriate format for a Zephyr Squad import. Multiple Zephyr test cases can be created in a single EXCEL file.
+
+
 
 
 
