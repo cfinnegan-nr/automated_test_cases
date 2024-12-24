@@ -183,7 +183,7 @@ def clean_ai_response(response):
 
 
 
-def main(jira_ticket):
+def main(jira_ticket, epic_link):
     """
     Main function to retrieve and process a JIRA ticket, then query the AI for test cases.
     """
@@ -252,7 +252,7 @@ def main(jira_ticket):
     
     # Stage 4: Parse the LLM response to build a JSON file of test case steps
     if bProceedtoLLM == True:
-        logging.info("Stage 4 - Parsing LLM Response into JSON Format..")
+        logging.info("Stage 4a - Parsing LLM Response into JSON Format..")
         if "choices" in query_ai_response and query_ai_response["choices"]:
             ai_content = query_ai_response["choices"][0]["message"]["content"]
             ai_content = clean_ai_response(ai_content)
@@ -270,7 +270,7 @@ def main(jira_ticket):
                     file_name = f"{jira_ticket}{sFile_TC_suffix}.json"
                     with open(file_name, 'w') as json_file:
                         json.dump(parsed_ai_content, json_file, indent=4)
-                    logging.info(f"Stage 4 - JSON output successfully written to {file_name}")
+                    logging.info(f"Stage 4b - JSON output successfully written to {file_name}")
                 except IOError as e:
                     logging.error(f"Failed to write JSON output to file: {e}")
             else:
@@ -282,9 +282,9 @@ def main(jira_ticket):
             logging.error("No valid response from AI")
 
         # Stage 5: Parse the JSON file of test case steps into XL format for Zephyr Squad Import    
-        logging.info("Stage 5 - Building Excel File for Zephyr Squad Import..")
+        logging.info("Stage 5a - Building Excel File for Zephyr Squad Import..")
         try:
-            generate_excel_from_json(f"{jira_ticket}{sFile_TC_suffix}.json")
+            generate_excel_from_json(f"{jira_ticket}{sFile_TC_suffix}.json", epic_link)
             logging.info("\n Successfully Generated AI Content and Created XL for Zephyr Squad Import\n")
         except Exception as e:
             logging.error(f"Error generating Excel file: {e}")
@@ -307,9 +307,11 @@ if __name__ == "__main__":
 
     # Build an XL from these test cases to use in Zephyr Squad Internal Import utility
    
-    if len(sys.argv) != 2:
-        print("Usage: python app.py <json_file>")
+    if len(sys.argv) != 3:
+        print("Usage: python app.py <JIRA_TICKET> <EPIC_LINK>")
     else:
-        #JIRA_TICKET = "INVHUB-11696"
+        # The user specifies the JIRA ticket from which to generate test cases
+        # The EPIC ticket to be linked is also specified - this is an IH requirement
         JIRA_TICKET = sys.argv[1]
-        main(JIRA_TICKET)
+        EPIC_LINK = sys.argv[2]
+        main(JIRA_TICKET, EPIC_LINK)

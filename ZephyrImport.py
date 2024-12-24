@@ -5,7 +5,7 @@ import os
 from openpyxl import Workbook
 import logging
 
-def generate_excel_from_json(json_file):
+def generate_excel_from_json(json_file, epic_link):
     try:
         with open(json_file, 'r') as file:
             data = json.load(file)
@@ -51,7 +51,8 @@ def generate_excel_from_json(json_file):
                     description,  # Description
                     "Core",  # Component
                     "external",  # jira-customfield-checkbox
-                    "INVHUB-10821",  # Epic Link
+                    #"INVHUB-10821",  # Epic Link
+                    epic_link,  # Epic Link
                     "blocks",  # Linked issues
                     "GenAI_Test_Case",  # Labels
                     "IM-5000",  # Issue Key [To add steps]
@@ -69,7 +70,7 @@ def generate_excel_from_json(json_file):
         # Save the workbook
         output_file = "Zephyr_Test_Cases_Output.xlsx"
         wb.save(output_file)
-        logging.info(f"Stage 5 - Excel file '{output_file}' created successfully.")
+        logging.info(f"Stage 5b - Excel file '{output_file}' created successfully.")
 
     except FileNotFoundError:
         print(f"The file '{json_file}' does not exist.")
