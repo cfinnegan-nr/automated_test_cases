@@ -1,38 +1,32 @@
-import os
-import requests
+
 from requests.auth import HTTPBasicAuth
 import json
 import logging
-import re
 import sys
 
-# Import function to generate Excel file used as inout for Zephyr Squad Internal Import utilty
+
+# Import custom functions to extract JIRA requirements data
+from jiraextraction import (retrieve_jira_ticket_from_server, 
+                            filter_dict, 
+                            validate_JIRA_env_vars)
+
+
+# Import custom functions to for OpenAI LLm connectivity
+from queryLLM import (query_ai, 
+                      validate_OpenAI_env_vars, 
+                      clean_ai_response)
+
+
+# Import custom function to generate Excel file used as inout for Zephyr Squad Internal Import utilty
 from ZephyrImport import generate_excel_from_json
 
-# Import OpenAI Environment Variables
-from openaienvvars import (AZURE_OPENAI_BASE_PATH, AI_API_TOKEN, 
-                       AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME, 
-                       AZURE_OPENAI_API_INSTANCE_NAME, 
-                       AZURE_OPENAI_API_VERSION)
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Load environment variables
-JIRA_BASE_URL = "https://netreveal.atlassian.net"
-JIRA_RETRIEVE_ENDPOINT = "https://netreveal.atlassian.net/rest/api/2/issue/{}?fields=description%2Ccomment%2Csummary"
-JIRA_CREATE_ENDPOINT = "https://netreveal.atlassian.net/rest/api/2/issue"
-JIRA_USER_NAME = os.getenv('JIRA_USER_NAME', "not_found")
-JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN', "not_found")
 
 
-
-# Construct the correct URL
-AI_ENDPOINT = f"{AZURE_OPENAI_BASE_PATH}/{AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME}/chat/completions?api-version={AZURE_OPENAI_API_VERSION}"
-    
-# Define additional parameters for the LLM prompt/response
-MAX_TOKENS = 1500
-TEMPERATURE = 0
 
 # Set up file name structure for JSON files output/input of Test Cases
 sFile_TC_suffix = "_test_case_steps"
@@ -58,131 +52,23 @@ WHITELIST = {
     }
 }
 
+# Check Environment Variables
 def validate_env_vars():
     """
     Validate that all required environment variables are set
     """
-    if JIRA_USER_NAME == "not_found":
-        logging.error("JIRA User Name not set")
+    if not validate_JIRA_env_vars():
         return False
-    if JIRA_API_TOKEN == "not_found":
-        logging.error("JIRA API Token not set")
-        return False
-    if AI_API_TOKEN == "not_found":
-        logging.error("AI API Token not set")
+    if not validate_OpenAI_env_vars():
         return False
     return True
 
-def filter_dict(d, whitelist):
-    """
-    Recursively filter a dictionary to only include keys in the whitelist.
-    """
-    result = {}
-    for k, v in d.items():
-        if k in whitelist:
-            if isinstance(v, dict):
-                result[k] = filter_dict(v, whitelist[k])
-            elif isinstance(v, list) and '__array__' in whitelist[k]:
-                result[k] = [filter_dict(elem, whitelist[k]['__array__']) if isinstance(elem, dict) else elem for elem in v]
-            else:
-                result[k] = v
-    return result
-
-def retrieve_jira_ticket_from_file(jira_ticket):
-    """
-    Read the json file <jira_ticket>.json and return the contents as a sting
-    """
-    with open(f"{jira_ticket}.json") as f:
-        return json.load(f)
-
-    
-    
-def retrieve_jira_ticket_from_server(jira_ticket):
-    """
-    Retrieve a JIRA ticket's details from the server using the JIRA REST API.
-    """
-    url = JIRA_RETRIEVE_ENDPOINT.format(jira_ticket)
-    auth = HTTPBasicAuth(JIRA_USER_NAME, JIRA_API_TOKEN)
-    
-    try:
-        response = requests.get(url, auth=auth)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        error_message = f"Error retrieving JIRA ticket: {e}"
-        logging.error(error_message)
-        #return {"error": error_message}
-        return None
 
 
-def query_ai(my_prompt):
-    """
-    Send the filtered JIRA ticket information to the AI endpoint and retrieve the AI-generated test cases.
-    """
-    # system_prompt = ("You are a Zephyr test case expert. Generate detailed QA test cases for each issue identified in the Jira ticket, "
-    #                  "and return all the test cases as a structured JSON object. Include the steps, expected results, and any preconditions or postconditions. ")
-    
-    # Define the path to the prompt file
-    prompt_file_path = os.path.join(os.path.dirname(__file__), 'LLM_Prompt.txt')
+# Main function to retrieve and process a JIRA ticket, then query the AI for test cases,
+# # and finally generate an Excel file for Zephyr Squad Internal Import utility.
 
-    # Read the contents of the file into a variable
-    with open(prompt_file_path, 'r', encoding='utf-8') as file:
-        system_prompt = file.read()
-
-    # Now system_prompt contains the contents of prompt.txt
-    
-    request_body = {
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": my_prompt}
-        ],
-        "temperature": TEMPERATURE,
-        "max_tokens": MAX_TOKENS
-    }
-
-    headers = {
-        "Content-Type": "application/json",
-        "api-key": AI_API_TOKEN
-    }
-
-    try:
-        response = requests.post(AI_ENDPOINT, headers=headers, json=request_body)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error querying AI: {e}")
-        return {}
-    
-
-def clean_ai_response(response):
-    try:
-        # print("Response - preparsing...\n.")
-        # print(response)    
-        # print("\n\n")
-
-
-        # Strip out the leading and end characters returned in the LLM response
-        if response.startswith("```json"):
-            # Use regex to find everything after the opening ```json and before the second ```
-            match = re.search(r'^```json\s*(.*?)\s*```', response, re.DOTALL)
-            if match:
-                parsed_content = match.group(1).strip()    
-        else:
-            print("Failure in parsing LLM response to JSON...\n.")
-
-
-
-        return parsed_content
-    except KeyError as e:
-        logging.error(f"Key error when cleaning AI response: {e}")
-        return None
-    except Exception as e:
-        logging.error(f"Unexpected error when cleaning AI response: {e}")
-        return None                                                    
-
-
-
-
+# This function is called when the script is run from the command line.
 def main(jira_ticket, epic_link):
     """
     Main function to retrieve and process a JIRA ticket, then query the AI for test cases.

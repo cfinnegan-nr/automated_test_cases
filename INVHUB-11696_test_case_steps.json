@@ -19,7 +19,7 @@
         {
             "id": "TC-INVHUB-11696-02",
             "summary": "Verify sorting functionality works correctly with applied filters",
-            "preconditions": "User has applied filters on the transaction list.",
+            "preconditions": "User is logged into the system, has access to the transaction list, and a filter is applied.",
             "steps": [
                 {
                     "step": "Apply a filter to a column in the transaction list.",
@@ -30,16 +30,16 @@
                     "expectedResult": "The transaction list is sorted based on the selected column, considering only the filtered results."
                 }
             ],
-            "postconditions": "The transaction list remains sorted and filtered as expected."
+            "postconditions": "The transaction list remains sorted and filtered as per the user's actions."
         },
         {
             "id": "TC-INVHUB-11696-03",
             "summary": "Verify the help guide is updated with filtering instructions",
-            "preconditions": "User has access to the help guide.",
+            "preconditions": "User is logged into the system and has access to the help guide.",
             "steps": [
                 {
-                    "step": "Open the help guide from the transaction list page.",
-                    "expectedResult": "Help guide is displayed."
+                    "step": "Navigate to the help guide section.",
+                    "expectedResult": "Help guide is accessible and visible."
                 },
                 {
                     "step": "Search for filtering instructions in the help guide.",
@@ -50,8 +50,8 @@
         },
         {
             "id": "TC-INVHUB-11696-04",
-            "summary": "Verify transaction graph does not refresh based on chosen filters",
-            "preconditions": "User has applied filters on the transaction list.",
+            "summary": "Verify that the transaction graph does not refresh based on chosen filters",
+            "preconditions": "User is logged into the system, has access to the transaction list, and a filter is applied.",
             "steps": [
                 {
                     "step": "Apply a filter to the transaction list.",
@@ -59,11 +59,10 @@
                 },
                 {
                     "step": "Observe the transaction graph.",
-                    "expectedResult": "The transaction graph remains unchanged and does not refresh based on the applied filters."
+                    "expectedResult": "The transaction graph remains unchanged and does not reflect the applied filters."
                 }
             ],
-            "postconditions": "The transaction graph remains static despite changes in the transaction list filters."
+            "postconditions": "The transaction graph remains static regardless of the filters applied to the list."
         }
-    ],
-    "assumptions": "Test data should include a variety of transactions with different attributes to ensure comprehensive filter testing. Ensure that the help guide is accessible and contains the latest updates."
+    ]
 }

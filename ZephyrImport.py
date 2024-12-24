@@ -1,10 +1,23 @@
 import pandas as pd
 import json
-import sys
-import os
 from openpyxl import Workbook
 import logging
 
+
+"""
+    The AI response has been parsed and the test cases are now available in a JSON format.
+    The next step is to convert the JSON data into an Excel file that can be imported into Zephyr. 
+    The Excel file should have the following columns: 
+        "External id", "Test Summary", "OrderId", "Step", "Test Data", 
+        "Expected Result", "Assigned To", "Comments", "Description", "Component", 
+        "jira-customfield-checkbox", "Epic Link", "Linked issues", "Labels", "Issue Key [To add steps]".
+    The Excel file should be saved as "Zephyr_Test_Cases_Output.xlsx".
+
+    For simplicty, some dummy variabels have been hardcoded in the function. 
+    These should be replaced with the actual values or fetched from the environment variables.
+
+
+"""
 def generate_excel_from_json(json_file, epic_link):
     try:
         with open(json_file, 'r') as file:
