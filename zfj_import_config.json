@@ -1,0 +1,26 @@
+{
+    "fieldMappingDetails": {
+        "selectedRows": [],
+        "fieldMaps": {
+            "assignee": "Assigned To",
+            "comments": "Comments",
+            "components": "Component",
+            "description": "Description",
+            "customfield_10014": "Epic Link",
+            "labels": "Labels",
+            "summary": "Test Summary",
+            "priority": "Priority",
+            "stepExpectedResults": "Expected Result",
+            "customfield_10020": "Sprint",
+            "stepAction": "Step",
+            "stepData": "Test Data"
+        },
+        "updatedColumnValue": {}
+    },
+    "importSettings": {
+        "startingRowNumber": 2,
+        "discriminator": "BY_SHEET",
+        "selectedSheets": "Sheet1",
+        "radioValue": "selectedSheets"
+    }
+}

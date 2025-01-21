@@ -192,6 +192,9 @@ if __name__ == "__main__":
     # Retrieve test cases from the file specified by the new variable
 
     # Build an XL from these test cases to use in Zephyr Squad Internal Import utility
+
+    # JIRA: INVHUb-11696
+    # EPIC_LINK: INVHUB-10821
    
     if len(sys.argv) != 3:
         print("Usage: python app.py <JIRA_TICKET> <EPIC_LINK>")

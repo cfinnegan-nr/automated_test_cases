@@ -54,4 +54,6 @@ In the main script, a Jira ticket number "INVHUB-11696" has been used as a sampl
 This project is built around a general use case for Investigator Gub. Hence, the test case must be linked to a
 specifc EPIC Issue Type in JIRA.
 
+The `zfj_import_config.json` file included in the project directory is a mapping file for the Zephyr Squad Internal Import utilty that automaticaly maps the fields in the EXCEL file to the fields in Zephyr Squad. It is a option configuration but is very helpful in avoiding unnecessary manual mapping for each import.
+
 For other projects the code can be amended to suit the specific project requirements.
